@@ -1,0 +1,13 @@
+node_base_name: kwok-node
+node_count: 1
+
+node_resources: |
+  allocatable:
+    cpu: 128
+    memory: 1536Gi
+    pods: 110
+  capacity:
+    cpu: 128
+    memory: 1536Gi
+    pods: 110
+

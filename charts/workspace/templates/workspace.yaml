@@ -1,0 +1,43 @@
+{{ range $i := untilStep 1 (add .Values.workspace_count 1 | int) 1 }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workload-{{ $i }}
+...
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workload-{{ $i }}
+  namespace: workload-{{ $i }}
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: workload-{{ $i }}
+  template:
+    metadata:
+      labels:
+        app: workload-{{ $i }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kwok.x-k8s.io/node
+                operator: In
+                values:
+                - fake
+      # A taints was added to an automatically created Node.
+      # You can remove taints of Node or add this tolerations.
+      tolerations:
+      - key: "kwok.x-k8s.io/node"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: fake-container
+        image: fake-image
+...
+{{ end }}

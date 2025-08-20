@@ -18,6 +18,7 @@ metadata:
     type: kwok
   name: {{ $.Values.node_base_name }}-{{ $i }}
 spec:
+  providerID: "kwok://{{ $.Values.node_base_name }}-{{ $i }}"
   taints: # Avoid scheduling actual running pods to fake Node
   - effect: NoSchedule
     key: kwok.x-k8s.io/node

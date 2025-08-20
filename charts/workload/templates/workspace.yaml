@@ -20,6 +20,7 @@ spec:
     metadata:
       labels:
         app: workload-{{ $i }}
+        type: fake
     spec:
       affinity:
         nodeAffinity:

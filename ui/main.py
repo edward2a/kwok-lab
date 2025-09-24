@@ -2,9 +2,11 @@
 import dearpygui.dearpygui as dpg
 
 global workloads
-workloads = 0
-
+global wl_idx
 global wl_settings
+
+workloads = 0
+wl_idx = 0
 wl_settings = {}
 
 def debugprint():
@@ -12,50 +14,54 @@ def debugprint():
 
 def add_workload():
     global workloads
+    global wl_idx
     global wl_settings
 
     workloads += 1
-    wl_settings[f"workload-{workloads}"] = {"D": 0, "P": 0, "R": 0}
+    wl_idx += 1
+    wl_settings[f"workload-{wl_idx}"] = {"D": 0, "P": 0, "R": 0}
 
-    with dpg.table_row(parent="table", tag=f"workload-{workloads}"):
+    with dpg.table_row(parent="table", tag=f"workload-{wl_idx}"):
 
         # Row column 1
         with dpg.table_cell():
             with dpg.group(horizontal=True):
-                dpg.add_text(f"workload {workloads}")
+                dpg.add_text(f"workload {wl_idx}")
                 dpg.add_button(label="-",
                                width=30,
-                               user_data=workloads,
+                               user_data=wl_idx,
                                callback=del_pod)
                 dpg.add_input_text(default_value="0",
                                    width=30,
-                                   tag=f"wl-{workloads}-desired",
+                                   tag=f"wl-{wl_idx}-desired",
                                    decimal=True,
-                                   user_data=workloads,
+                                   user_data=wl_idx,
                                    on_enter=True,
                                    callback=set_pod)
                 dpg.add_button(label="+", width=30,
-                               user_data=workloads,
+                               user_data=wl_idx,
                                callback=add_pod)
 
         # Row column 2
         with dpg.table_cell():
-            dpg.add_text(wl_settings[f"workload-{workloads}"]["P"], tag=f"wl-{workloads}-pending")
+            dpg.add_text(wl_settings[f"workload-{wl_idx}"]["P"], tag=f"wl-{wl_idx}-pending")
 
         # Row column 3
         with dpg.table_cell():
-            dpg.add_text(wl_settings[f"workload-{workloads}"]["R"], tag=f"wl-{workloads}-running")
+            dpg.add_text(wl_settings[f"workload-{wl_idx}"]["R"], tag=f"wl-{wl_idx}-running")
     # TODO: kubernetes add deployment
 
 def del_workload():
     global workloads
+    global wl_idx
     global wl_settings
 
     if workloads == 0:
         return
 
-    dpg.delete_item(f"workload-{workloads}")
-    del(wl_settings[f"workload-{workloads}"])
+    wl_del = int(list(wl_settings)[-1].split('-')[-1])
+    dpg.delete_item(f"workload-{wl_del}")
+    del(wl_settings[f"workload-{wl_del}"])
     workloads -= 1
     # TODO: kubernetes remove deployment
 

@@ -105,12 +105,12 @@ def main():
                            borders_innerV=True,
                            borders_innerH=True,
                            row_background=True,
-                           resizable=True,
-                           width=600):
+                           resizable=False,
+                           width=400):
 
-                dpg.add_table_column(label="WORKLOADS (DESIRED)", width=200)
-                dpg.add_table_column(label="PENDING", width=50)
-                dpg.add_table_column(label="RUNNING", width=50)
+                dpg.add_table_column(label="WORKLOADS (DESIRED)", init_width_or_weight=84)
+                dpg.add_table_column(label="PEN", init_width_or_weight=8)
+                dpg.add_table_column(label="RUN", init_width_or_weight=8)
 
                 with dpg.table_row(height=30):
                     with dpg.table_cell():

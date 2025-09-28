@@ -87,9 +87,15 @@ def set_pod(sender, app_data, user_data):
 def main():
     dpg.create_context()
 
-    with dpg.window(tag="primary"):
+    with dpg.window(tag="primary", no_saved_settings=True):
         dpg.set_primary_window("primary", True)
 
+        # Window menu
+        with dpg.menu_bar():
+            with dpg.menu(label='Workloads'):
+                dpg.add_menu_item(label='Load...')
+
+        # Workloads table
         with dpg.group(horizontal=True):
 
             with dpg.table(tag="table",

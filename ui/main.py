@@ -95,6 +95,10 @@ def main():
             with dpg.menu(label='Workloads'):
                 dpg.add_menu_item(label='Load...')
 
+            with dpg.menu(label='Kubernetes'):
+                dpg.add_menu_item(label='Initialize')
+                dpg.add_menu_item(label='Terminate')
+
         # Workloads table
         with dpg.group(horizontal=True):
 
@@ -108,9 +112,9 @@ def main():
                            resizable=False,
                            width=400):
 
-                dpg.add_table_column(label="WORKLOADS (DESIRED)", init_width_or_weight=84)
-                dpg.add_table_column(label="PEN", init_width_or_weight=8)
-                dpg.add_table_column(label="RUN", init_width_or_weight=8)
+                dpg.add_table_column(label="WORKLOADS (DESIRED)", init_width_or_weight=336)
+                dpg.add_table_column(label="PEN", init_width_or_weight=32)
+                dpg.add_table_column(label="RUN", init_width_or_weight=32)
 
                 with dpg.table_row(height=30):
                     with dpg.table_cell():

@@ -130,9 +130,19 @@ def main():
     dpg.create_viewport()
     dpg.setup_dearpygui()
     dpg.show_viewport()
-    dpg.start_dearpygui()
+
+    while dpg.is_dearpygui_running():
+        # Loop tasks
+
+        # Render
+        dpg.render_dearpygui_frame()
+
     dpg.destroy_context()
 
 
 if __name__ == '__main__':
+    # Vertical sync (limit FPS)
+    # Commented due to segfault in dev environment
+    #dpg.set_viewport_vsync(True)
+
     main()

@@ -1,5 +1,10 @@
 #! /usr/bin/env python3
 import dearpygui.dearpygui as dpg
+#import UltraDict.UltraDict as udict
+
+from multiprocessing import Queue
+from multiprocessing import Process
+from time import sleep
 
 global workloads
 global wl_idx
@@ -11,6 +16,9 @@ wl_settings = {}
 
 def debugprint():
     print(f"button pressed!")
+
+def debugmsg():
+    q_worker.put({'action': None, 'msg': 'Hi from the DPG!'})
 
 def add_workload():
     global workloads
@@ -84,7 +92,10 @@ def set_pod(sender, app_data, user_data):
     wl_settings[f"workload-{user_data}"]["D"] = int(app_data)
     # TODO: kubernetes scale workload
 
-def main():
+def process_message(msg):
+    print(msg)
+
+def main(q_gui, q_worker):
     dpg.create_context()
 
     with dpg.window(tag="primary", no_saved_settings=True):
@@ -125,7 +136,7 @@ def main():
                             dpg.add_button(label="+", width=90, height=30,
                                            callback=add_workload, user_data=workloads)
 
-            dpg.add_button(label="I'm a button")
+            dpg.add_button(label="I'm a button", callback=debugmsg)
 
     dpg.create_viewport()
     dpg.setup_dearpygui()
@@ -133,16 +144,53 @@ def main():
 
     while dpg.is_dearpygui_running():
         # Loop tasks
-
+        while not q_gui.empty():
+            process_message(q_gui.get_nowait())
         # Render
         dpg.render_dearpygui_frame()
 
     dpg.destroy_context()
 
+class Worker(Process):
+    def __init__(self, q_gui, q_worker):
+        self.q_gui = q_gui
+        self.q_worker = q_worker
+        super().__init__()
+
+    def run(self):
+        _run = True
+
+        while _run:
+            if q_worker.empty():
+                q_gui.put({'msg': 'Hello, world!'})
+            else:
+                msg = q_worker.get()
+
+                if msg['action'] == 'stop':
+                    _run == False
+
+                q_gui.put(f'Got message: {msg}')
+
+            sleep(5)
 
 if __name__ == '__main__':
     # Vertical sync (limit FPS)
     # Commented due to segfault in dev environment
     #dpg.set_viewport_vsync(True)
 
-    main()
+    #shm_gui = udict({'msgs': [], 'queued': False}, auto_unlink=True)
+    #shm_worker = udict({'msgs': [], 'queued': False}, auto_unlink=True)
+    q_gui = Queue()
+    q_worker = Queue()
+
+    worker = Worker(q_gui, q_worker)
+    worker.start()
+
+    main(q_gui, q_worker)
+
+    q_worker.put({'action': 'stop'})
+    sleep(1)
+    worker.terminate()
+    worker.join()
+    worker.close()
+

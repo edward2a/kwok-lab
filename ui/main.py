@@ -18,7 +18,7 @@ def debugprint():
     print(f"button pressed!")
 
 def debugmsg():
-    q_worker.put({'action': None, 'msg': 'Hi from the DPG!'})
+    q_command.put({'action': None, 'msg': 'Hi from the DPG!'})
 
 def add_workload():
     global workloads
@@ -95,7 +95,7 @@ def set_pod(sender, app_data, user_data):
 def process_message(msg):
     print(msg)
 
-def main(q_gui, q_worker):
+def main(q_gui, q_command):
     dpg.create_context()
 
     with dpg.window(tag="primary", no_saved_settings=True):
@@ -151,27 +151,58 @@ def main(q_gui, q_worker):
 
     dpg.destroy_context()
 
-class Worker(Process):
-    def __init__(self, q_gui, q_worker):
+class PollWorker(Process):
+    def __init__(self, q_gui):
         self.q_gui = q_gui
-        self.q_worker = q_worker
         super().__init__()
 
     def run(self):
-        _run = True
+        __run = True
 
-        while _run:
-            if q_worker.empty():
-                q_gui.put({'msg': 'Hello, world!'})
-            else:
-                msg = q_worker.get()
+        while __run:
+            try:
+                q_gui.put({'msg': 'Hello, world!', 'src': 'poll'})
+                sleep(5)
+            except Exception as e:
+                print(e, e.reason)
+                break
 
+class EventWorker(Process):
+    def __init__(self, q_gui):
+        self.q_gui = q_gui
+        super().__init__()
+
+    def run(self):
+        __run = True
+
+        while __run:
+            try:
+                q_gui.put({'msg': 'Hello, world!', 'src': 'event'})
+                sleep(5)
+            except Exception as e:
+                print(e, e.reason)
+                break
+
+class CommandWorker(Process):
+    def __init__(self, q_command, q_gui):
+        self.q_command = q_command
+        self.q_gui = q_gui
+        super().__init__()
+
+    def run(self):
+        __run = True
+
+        while __run:
+            try:
+                msg = q_command.get()
                 if msg['action'] == 'stop':
-                    _run == False
+                    __run == False
+                else:
+                    q_gui.put({'t': 'log', 'lvl': 'info', 'msg': msg, 'src': 'command'})
 
-                q_gui.put(f'Got message: {msg}')
+            except Exception as e:
+                print(e, e.reason)
 
-            sleep(5)
 
 if __name__ == '__main__':
     # Vertical sync (limit FPS)
@@ -181,16 +212,35 @@ if __name__ == '__main__':
     #shm_gui = udict({'msgs': [], 'queued': False}, auto_unlink=True)
     #shm_worker = udict({'msgs': [], 'queued': False}, auto_unlink=True)
     q_gui = Queue()
-    q_worker = Queue()
+    q_command = Queue()
 
-    worker = Worker(q_gui, q_worker)
-    worker.start()
+    evt_worker = EventWorker(q_gui)
+    cmd_worker = CommandWorker(q_command, q_gui)
+    pll_worker = PollWorker(q_gui)
 
-    main(q_gui, q_worker)
+    evt_worker.start()
+    cmd_worker.start()
+    pll_worker.start()
 
-    q_worker.put({'action': 'stop'})
-    sleep(1)
-    worker.terminate()
-    worker.join()
-    worker.close()
+    main(q_gui, q_command)
+
+    q_command.put({'action': 'stop'})
+    sleep(0.2)
+
+    q_command.close()
+    q_command.join_thread()
+    q_gui.close()
+    q_gui.join_thread()
+
+    cmd_worker.terminate()
+    cmd_worker.join()
+    cmd_worker.close()
+
+    evt_worker.terminate()
+    evt_worker.join()
+    evt_worker.close()
+
+    pll_worker.terminate()
+    pll_worker.join()
+    pll_worker.close()
 

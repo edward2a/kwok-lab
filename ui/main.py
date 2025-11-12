@@ -151,7 +151,11 @@ def main(q_gui, q_command):
 
     dpg.destroy_context()
 
-class PollWorker(Process):
+class K8sWorker(object):
+    def init_client(self):
+        self.core = kubernetes.client.CoreV1Api()
+
+class PollWorker(Process, K8sWorker):
     def __init__(self, q_gui):
         self.q_gui = q_gui
         super().__init__()
@@ -167,7 +171,7 @@ class PollWorker(Process):
                 print(e, e.reason)
                 break
 
-class EventWorker(Process):
+class EventWorker(Process, K8sWorker):
     def __init__(self, q_gui):
         self.q_gui = q_gui
         super().__init__()
@@ -183,7 +187,7 @@ class EventWorker(Process):
                 print(e, e.reason)
                 break
 
-class CommandWorker(Process):
+class CommandWorker(Process, K8sWorker):
     def __init__(self, q_command, q_gui):
         self.q_command = q_command
         self.q_gui = q_gui

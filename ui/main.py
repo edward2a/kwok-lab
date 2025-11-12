@@ -96,6 +96,12 @@ def process_message(msg):
     print(msg)
 
 def gui_main(q_gui, q_command):
+    # Vertical sync (limit FPS)
+    # Commented due to segfault in dev environment
+    #dpg.set_viewport_vsync(True)
+
+    #shm_gui = udict({'msgs': [], 'queued': False}, auto_unlink=True)
+    #shm_worker = udict({'msgs': [], 'queued': False}, auto_unlink=True)
     dpg.create_context()
 
     with dpg.window(tag="primary", no_saved_settings=True):
@@ -103,12 +109,12 @@ def gui_main(q_gui, q_command):
 
         # Window menu
         with dpg.menu_bar():
+            with dpg.menu(label='Workers'):
+                dpg.add_menu_item(label='Start')
+                dpg.add_menu_item(label='Stop')
+
             with dpg.menu(label='Workloads'):
                 dpg.add_menu_item(label='Load...')
-
-            with dpg.menu(label='Kubernetes'):
-                dpg.add_menu_item(label='Initialize')
-                dpg.add_menu_item(label='Terminate')
 
         # Workloads table
         with dpg.group(horizontal=True):
@@ -208,43 +214,42 @@ class CommandWorker(Process, K8sWorker):
                 print(e, e.reason)
 
 
+class Main(object):
+    def __init__(self):
+        self.q_gui = Queue()
+        self.q_command = Queue()
+
+        self.evt_worker = EventWorker(self.q_gui)
+        self.cmd_worker = CommandWorker(self.q_command, self.q_gui)
+        self.pll_worker = PollWorker(self.q_gui)
+
+        gui_main(self.q_gui, self.q_command)
+
+    def start(self):
+        evt_worker.start()
+        cmd_worker.start()
+        pll_worker.start()
+
+    def stop(self):
+        q_command.put({'action': 'stop'})
+        sleep(0.2)
+
+        q_command.close()
+        q_command.join_thread()
+        q_gui.close()
+        q_gui.join_thread()
+
+        cmd_worker.terminate()
+        cmd_worker.join()
+        cmd_worker.close()
+
+        evt_worker.terminate()
+        evt_worker.join()
+        evt_worker.close()
+
+        pll_worker.terminate()
+        pll_worker.join()
+        pll_worker.close()
+
 if __name__ == '__main__':
-    # Vertical sync (limit FPS)
-    # Commented due to segfault in dev environment
-    #dpg.set_viewport_vsync(True)
-
-    #shm_gui = udict({'msgs': [], 'queued': False}, auto_unlink=True)
-    #shm_worker = udict({'msgs': [], 'queued': False}, auto_unlink=True)
-    q_gui = Queue()
-    q_command = Queue()
-
-    evt_worker = EventWorker(q_gui)
-    cmd_worker = CommandWorker(q_command, q_gui)
-    pll_worker = PollWorker(q_gui)
-
-    evt_worker.start()
-    cmd_worker.start()
-    pll_worker.start()
-
-    gui_main(q_gui, q_command)
-
-    q_command.put({'action': 'stop'})
-    sleep(0.2)
-
-    q_command.close()
-    q_command.join_thread()
-    q_gui.close()
-    q_gui.join_thread()
-
-    cmd_worker.terminate()
-    cmd_worker.join()
-    cmd_worker.close()
-
-    evt_worker.terminate()
-    evt_worker.join()
-    evt_worker.close()
-
-    pll_worker.terminate()
-    pll_worker.join()
-    pll_worker.close()
-
+    Main()

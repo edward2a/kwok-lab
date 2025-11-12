@@ -16,10 +16,6 @@ wl_idx = 0
 wl_settings = {}
 
 
-def debugprint():
-    print(f"button pressed!")
-
-
 # user_data => q_command
 def debugmsg(sender, app_data, q_command):
     q_command.put({"action": None, "msg": "Hi from the DPG!"})

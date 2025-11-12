@@ -17,7 +17,8 @@ wl_settings = {}
 def debugprint():
     print(f"button pressed!")
 
-def debugmsg():
+# user_data => q_command
+def debugmsg(sender, app_data, q_command):
     q_command.put({'action': None, 'msg': 'Hi from the DPG!'})
 
 def add_workload():
@@ -95,7 +96,7 @@ def set_pod(sender, app_data, user_data):
 def process_message(msg):
     print(msg)
 
-def gui_main(q_gui, q_command):
+def gui_main(main, q_gui, q_command):
     # Vertical sync (limit FPS)
     # Commented due to segfault in dev environment
     #dpg.set_viewport_vsync(True)
@@ -110,8 +111,8 @@ def gui_main(q_gui, q_command):
         # Window menu
         with dpg.menu_bar():
             with dpg.menu(label='Workers'):
-                dpg.add_menu_item(label='Start')
-                dpg.add_menu_item(label='Stop')
+                dpg.add_menu_item(label='Start', callback=main.start_workers)
+                dpg.add_menu_item(label='Stop', callback=main.stop_workers)
 
             with dpg.menu(label='Workloads'):
                 dpg.add_menu_item(label='Load...')
@@ -142,7 +143,7 @@ def gui_main(q_gui, q_command):
                             dpg.add_button(label="+", width=90, height=30,
                                            callback=add_workload, user_data=workloads)
 
-            dpg.add_button(label="I'm a button", callback=debugmsg)
+            dpg.add_button(label="I'm a button", callback=debugmsg, user_data=q_command)
 
     dpg.create_viewport()
     dpg.setup_dearpygui()
@@ -171,7 +172,7 @@ class PollWorker(Process, K8sWorker):
 
         while __run:
             try:
-                q_gui.put({'msg': 'Hello, world!', 'src': 'poll'})
+                self.q_gui.put({'msg': 'Hello, world!', 'src': 'poll'})
                 sleep(5)
             except Exception as e:
                 print(e, e.reason)
@@ -187,7 +188,7 @@ class EventWorker(Process, K8sWorker):
 
         while __run:
             try:
-                q_gui.put({'msg': 'Hello, world!', 'src': 'event'})
+                self.q_gui.put({'msg': 'Hello, world!', 'src': 'event'})
                 sleep(5)
             except Exception as e:
                 print(e, e.reason)
@@ -204,11 +205,11 @@ class CommandWorker(Process, K8sWorker):
 
         while __run:
             try:
-                msg = q_command.get()
+                msg = self.q_command.get()
                 if msg['action'] == 'stop':
                     __run == False
                 else:
-                    q_gui.put({'t': 'log', 'lvl': 'info', 'msg': msg, 'src': 'command'})
+                    self.q_gui.put({'t': 'log', 'lvl': 'info', 'msg': msg, 'src': 'command'})
 
             except Exception as e:
                 print(e, e.reason)
@@ -223,33 +224,36 @@ class Main(object):
         self.cmd_worker = CommandWorker(self.q_command, self.q_gui)
         self.pll_worker = PollWorker(self.q_gui)
 
-        gui_main(self.q_gui, self.q_command)
 
     def start(self):
-        evt_worker.start()
-        cmd_worker.start()
-        pll_worker.start()
+        gui_main(self, self.q_gui, self.q_command)
+        self.stop_workers()
 
-    def stop(self):
-        q_command.put({'action': 'stop'})
+    def start_workers(self):
+        self.evt_worker.start()
+        self.cmd_worker.start()
+        self.pll_worker.start()
+
+    def stop_workers(self):
+        self.q_command.put({'action': 'stop'})
         sleep(0.2)
 
-        q_command.close()
-        q_command.join_thread()
-        q_gui.close()
-        q_gui.join_thread()
+        self.q_command.close()
+        self.q_command.join_thread()
+        self.q_gui.close()
+        self.q_gui.join_thread()
 
-        cmd_worker.terminate()
-        cmd_worker.join()
-        cmd_worker.close()
+        self.cmd_worker.terminate()
+        self.cmd_worker.join()
+        self.cmd_worker.close()
 
-        evt_worker.terminate()
-        evt_worker.join()
-        evt_worker.close()
+        self.evt_worker.terminate()
+        self.evt_worker.join()
+        self.evt_worker.close()
 
-        pll_worker.terminate()
-        pll_worker.join()
-        pll_worker.close()
+        self.pll_worker.terminate()
+        self.pll_worker.join()
+        self.pll_worker.close()
 
 if __name__ == '__main__':
-    Main()
+    Main().start()

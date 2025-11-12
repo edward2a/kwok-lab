@@ -95,7 +95,7 @@ def set_pod(sender, app_data, user_data):
 def process_message(msg):
     print(msg)
 
-def main(q_gui, q_command):
+def gui_main(q_gui, q_command):
     dpg.create_context()
 
     with dpg.window(tag="primary", no_saved_settings=True):
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     cmd_worker.start()
     pll_worker.start()
 
-    main(q_gui, q_command)
+    gui_main(q_gui, q_command)
 
     q_command.put({'action': 'stop'})
     sleep(0.2)

@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import dearpygui.dearpygui as dpg
+import kubernetes
 
 # import UltraDict.UltraDict as udict
 
@@ -244,6 +245,7 @@ class CommandWorker(Process, K8sWorker):
 
 class Main(object):
     def __init__(self):
+        kubernetes.config.load_config()
         self.q_gui = Queue()
         self.q_command = Queue()
 
@@ -269,16 +271,19 @@ class Main(object):
         self.q_gui.close()
         self.q_gui.join_thread()
 
-        self.cmd_worker.terminate()
-        self.cmd_worker.join()
+        if self.cmd_worker.is_alive():
+            self.cmd_worker.terminate()
+            self.cmd_worker.join()
         self.cmd_worker.close()
 
-        self.evt_worker.terminate()
-        self.evt_worker.join()
+        if self.evt_worker.is_alive():
+            self.evt_worker.terminate()
+            self.evt_worker.join()
         self.evt_worker.close()
 
-        self.pll_worker.terminate()
-        self.pll_worker.join()
+        if self.pll_worker.is_alive():
+            self.pll_worker.terminate()
+            self.pll_worker.join()
         self.pll_worker.close()
 
 

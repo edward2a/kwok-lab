@@ -31,7 +31,7 @@ def add_workload():
     wl_idx += 1
     wl_settings[f"workload-{wl_idx}"] = {"D": 0, "P": 0, "R": 0}
 
-    with dpg.table_row(parent="table", tag=f"workload-{wl_idx}"):
+    with dpg.table_row(parent="workloads_t", tag=f"workload-{wl_idx}"):
 
         # Row column 1
         with dpg.table_cell():
@@ -122,6 +122,9 @@ def gui_main(main, q_gui, q_command):
                 dpg.add_menu_item(label="Start", callback=main.start_workers)
                 dpg.add_menu_item(label="Stop", callback=main.stop_workers)
 
+            with dpg.menu(label="Nodes"):
+                dpg.add_menu_item(label="Load spec")
+
             with dpg.menu(label="Workloads"):
                 dpg.add_menu_item(label="Load...")
 
@@ -129,7 +132,7 @@ def gui_main(main, q_gui, q_command):
         with dpg.group(horizontal=True):
 
             with dpg.table(
-                tag="table",
+                tag="nodes_t",
                 header_row=True,
                 borders_outerH=False,
                 borders_outerV=False,
@@ -141,10 +144,28 @@ def gui_main(main, q_gui, q_command):
             ):
 
                 dpg.add_table_column(
-                    label="WORKLOADS (DESIRED)", init_width_or_weight=336
+                    label="NODE SPECS", init_width_or_weight=320
                 )
-                dpg.add_table_column(label="PEN", init_width_or_weight=32)
-                dpg.add_table_column(label="RUN", init_width_or_weight=32)
+                dpg.add_table_column(label="WANT", init_width_or_weight=40)
+                dpg.add_table_column(label="READY", init_width_or_weight=40)
+
+            with dpg.table(
+                tag="workloads_t",
+                header_row=True,
+                borders_outerH=False,
+                borders_outerV=False,
+                borders_innerV=True,
+                borders_innerH=True,
+                row_background=True,
+                resizable=False,
+                width=400,
+            ):
+
+                dpg.add_table_column(
+                    label="WORKLOADS (DESIRED)", init_width_or_weight=320
+                )
+                dpg.add_table_column(label="PEND", init_width_or_weight=40)
+                dpg.add_table_column(label="RUNN", init_width_or_weight=40)
 
                 with dpg.table_row(height=30):
                     with dpg.table_cell():
@@ -152,14 +173,14 @@ def gui_main(main, q_gui, q_command):
                             workloads = 0
                             dpg.add_button(
                                 label="-",
-                                width=90,
+                                width=30,
                                 height=30,
                                 callback=del_workload,
                                 user_data=workloads,
                             )
                             dpg.add_button(
                                 label="+",
-                                width=90,
+                                width=30,
                                 height=30,
                                 callback=add_workload,
                                 user_data=workloads,

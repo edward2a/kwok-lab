@@ -118,7 +118,7 @@ def gui_main(main, q_gui, q_command):
 
         # Window menu
         with dpg.menu_bar():
-            with dpg.menu(label="Workers"):
+            with dpg.menu(label="Svc Workers"):
                 dpg.add_menu_item(label="Start", callback=main.start_workers)
                 dpg.add_menu_item(label="Stop", callback=main.stop_workers)
 
@@ -126,7 +126,7 @@ def gui_main(main, q_gui, q_command):
                 dpg.add_menu_item(label="Load spec")
 
             with dpg.menu(label="Workloads"):
-                dpg.add_menu_item(label="Load...")
+                dpg.add_menu_item(label="Load spec")
 
         # Workloads table
         with dpg.group(horizontal=True):

@@ -266,7 +266,11 @@ class CommandWorker(Process, K8sWorker):
 
 class Main(object):
     def __init__(self):
-        kubernetes.config.load_config()
+        try:
+            kubernetes.config.load_config()
+        except kubernetes.config.config_exception.ConfigException:
+            print('WARN: Cannot load kubernetes configuration.')
+
         self.q_gui = Queue()
         self.q_command = Queue()
 

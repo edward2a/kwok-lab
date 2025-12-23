@@ -113,7 +113,11 @@ def gui_main(main, q_gui, q_command):
     # shm_worker = udict({'msgs': [], 'queued': False}, auto_unlink=True)
     dpg.create_context()
 
+    with dpg.font_registry():
+        default_font = dpg.add_font("DejaVuSans.ttf", 14)
+
     with dpg.window(tag="primary", no_saved_settings=True):
+        dpg.bind_font(default_font)
         dpg.set_primary_window("primary", True)
 
         # Window menu
